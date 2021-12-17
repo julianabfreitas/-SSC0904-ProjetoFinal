@@ -1,14 +1,21 @@
 #include <stdio.h>	
+#include <stdlib.h>
 #include <string.h>	
 #include <sys/socket.h>	
 #include <arpa/inet.h>	
 #include <unistd.h>
 
-int main(){
+// Argumentos da chamada do client: ./client (rotação) (nome do arq inicial) (nome do arq final)
+
+int main(int argc, char *argv[]){
     //declaração das variáveis
-    int socket_cliente, rotacao;
+    int socket_cliente, rotacao = atoi(argv[0]);
     struct sockaddr_in servidor;
     char msg_cliente[1800], msg_servidor[1800];
+    FILE* arq_i, arq_f;
+
+    arq_i = fopen(argv[1],'r');
+    arq_f = fopen(argv[2],'w');
 
     //criação do socket
     socket_cliente = socket(AF_INET, SOCK_STREAM, 0);
@@ -36,29 +43,17 @@ int main(){
     //mensagem de sucesso
     puts("Conexão estabelecida com sucesso!");
 
-    //o cliente tem a opção de escolher que o tamanho da rotação que ele deseja para a sua criptografia
-    printf("Escolha a rotação desejada para a criptografia: ");
-	scanf("%d", &rotacao);
-    getchar();
-
     //o cliente envia para o servidor, o valor da rotação
     if(send(socket_cliente, &rotacao, sizeof(int), 0) < 0){
-        puts("Falha no envio da mensagem! :(");
+        puts("Falha no envio da rotação! :(");
         return 1;
     }
 
     //while que fica lendo as mensagens que o cliente deseja criptografar
     while(1){
-        //cliente insere mensagem
-        printf("Insira a mensagem a ser criptografada: ");
-		scanf("%[^\n]", msg_cliente);
-        getchar();
 
-        //caso o cliente digite '!', o processo acaba
-        if(msg_cliente[0] == '!'){
-            puts("O cliente desconectou");
-		    fflush(stdout);
-            return 0;
+        if(fread(msg_cliente,sizeof(char),1800,arq_i) == 0){
+            break;
         }
 
 		//Envio da mensagem do cliente para o servidor
@@ -73,12 +68,16 @@ int main(){
 			break;
 		}
 
-		printf("(Servidor) A mensagem criptografada é: %s\n", msg_servidor);
+        fwrite(msg_servidor,sizeof(char),1800,arq_f);
+		
+        //printf("(Servidor) A mensagem criptografada é: %s\n", msg_servidor);
 
 		//limpeza das variáveis
         memset(msg_cliente,0,1800);
         memset(msg_servidor,0,1800);
 	}
 
+    fclose(arq_i);
+    fclose(arq_f);
     return 0;
 }
