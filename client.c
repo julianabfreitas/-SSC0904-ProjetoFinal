@@ -9,13 +9,25 @@
 
 int main(int argc, char *argv[]){
     //declaração das variáveis
-    int socket_cliente, rotacao = atoi(argv[0]);
+    int socket_cliente, rotacao = atoi(argv[1]);
+    long tamanho;
     struct sockaddr_in servidor;
-    char msg_cliente[1800], msg_servidor[1800];
-    FILE* arq_i, arq_f;
+    FILE *arq_i, *arq_f;
 
-    arq_i = fopen(argv[1],'r');
-    arq_f = fopen(argv[2],'w');
+    if(argc != 4){
+        (argc < 4) ? printf("Número de parâmetros insuficientes\n") : printf("Número de parâmetros além do necessário\n");
+        return 0;
+    }
+
+    arq_i = fopen(argv[2],"r");
+    arq_f = fopen(argv[3],"w");
+
+    fseek(arq_i,0,SEEK_END);
+    tamanho = ftell(arq_i);
+    fseek(arq_i,0,SEEK_SET);
+    printf("%d",tamanho);
+
+    char msg_cliente[tamanho], msg_servidor[tamanho];
 
     //criação do socket
     socket_cliente = socket(AF_INET, SOCK_STREAM, 0);
@@ -49,33 +61,31 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    //while que fica lendo as mensagens que o cliente deseja criptografar
-    while(1){
+    if(fread(msg_cliente,sizeof(char),tamanho,arq_i) == 0){
+        printf("Erro ao ler o arquivo");
+        return 0;
+    }    
 
-        if(fread(msg_cliente,sizeof(char),1800,arq_i) == 0){
-            break;
-        }
+    //Envio da mensagem do cliente para o servidor
+    if(send(socket_cliente, msg_cliente, strlen(msg_cliente), 0) < 0){
+        puts("Falha no envio da mensagem! :(");
+        return 1;
+    }
 
-		//Envio da mensagem do cliente para o servidor
-		if(send(socket_cliente, msg_cliente, strlen(msg_cliente), 0) < 0){
-			puts("Falha no envio da mensagem! :(");
-			return 1;
-		}
+    //Recebimento da mensagem já criptografada do servidor
+    if(recv(socket_cliente, msg_servidor, tamanho, 0) < 0){
+        puts("Falha no recv");
+        return 0;
+    }
 
-		//Recebimento da mensagem já criptografada do servidor
-		if(recv(socket_cliente, msg_servidor, 1800, 0) < 0){
-			puts("Falha no recv");
-			break;
-		}
+    fwrite(msg_servidor,sizeof(char),tamanho,arq_f);
 
-        fwrite(msg_servidor,sizeof(char),1800,arq_f);
-		
-        //printf("(Servidor) A mensagem criptografada é: %s\n", msg_servidor);
+    //limpeza das variáveis
+    memset(msg_cliente,0,tamanho);
+    memset(msg_servidor,0,tamanho);
 
-		//limpeza das variáveis
-        memset(msg_cliente,0,1800);
-        memset(msg_servidor,0,1800);
-	}
+    fseek(arq_i,-1,SEEK_END);
+    fputc('\0',arq_i);
 
     fclose(arq_i);
     fclose(arq_f);
