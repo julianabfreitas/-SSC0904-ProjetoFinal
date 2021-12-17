@@ -29,8 +29,8 @@ E em seguida, rode o executável.
   
 Para o cliente, utilize o seguinte comando no terminal linux de sua preferência.
 
-`gcc client.c -o client (número de rotação) (arquivo_inicial.txt) (arquivo_criptografado.txt)`
+`gcc client.c -o client`
   
  E em seguida, rode o executável.
   
-`./client`
+`./client (número de rotação) (arquivo_inicial.txt) (arquivo_criptografado.txt)`
