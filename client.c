@@ -25,8 +25,7 @@ int main(int argc, char *argv[]){
     fseek(arq_i,0,SEEK_END);
     tamanho = ftell(arq_i);
     fseek(arq_i,0,SEEK_SET);
-    printf("%d",tamanho);
-
+   
     char msg_cliente[tamanho], msg_servidor[tamanho];
 
     //criação do socket
